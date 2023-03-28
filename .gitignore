@@ -2,6 +2,9 @@
 .Rhistory
 .Rapp.history
 
+# Input files
+/input
+
 # Session Data files
 .RData
 
@@ -37,3 +40,4 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+.DS_Store
