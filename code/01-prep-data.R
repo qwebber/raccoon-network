@@ -6,8 +6,6 @@ library(ggplot2)
 ## load data
 raccoon <- fread("input/raccoon.csv")
 
-blah blah blah 
-
 ## remove un-needed columns
 raccoon[,c("Altitude", "Primary Key", 
            "Comments", "Fix #", "Fix Status", 
@@ -39,7 +37,13 @@ raccoon[, datetime := as.POSIXct(paste(idate,itime), format = "%Y-%m-%d %H:%M:%S
 
 ## quick plot 
 
-ggplot(raccoon[location == "Conservation Area" & Session == 3 & yr == "2013"],
+pts <- SpatialPointsDataFrame(locs[, ..coords],
+                              proj4string = CRS(utm21N),
+                              data = locs[, .(ID)])
+
+ud <- kernelUD(pts, grid = 700, extent = 3)
+
+ggplot(raccoon[location == "Conservation Area" & id == "R1506"],
        aes(long, lat, color = idate)) +
   geom_point() +
   geom_path() +
