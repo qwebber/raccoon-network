@@ -6,6 +6,8 @@ library(ggplot2)
 ## load data
 raccoon <- fread("input/raccoon.csv")
 
+blah blah blah 
+
 ## remove un-needed columns
 raccoon[,c("Altitude", "Primary Key", 
            "Comments", "Fix #", "Fix Status", 
