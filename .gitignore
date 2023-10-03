@@ -4,6 +4,7 @@
 
 # Input files
 /input
+/outout
 
 # Session Data files
 .RData
