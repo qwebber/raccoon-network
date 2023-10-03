@@ -9,7 +9,7 @@ raccoon <- fread("input/raccoon.csv")
 ## remove un-needed columns
 raccoon[,c("Altitude", "Primary Key", 
            "Comments", "Fix #", "Fix Status", 
-           "# Sats", "Location ID", 
+           "# Sats",
            "Fix Time Raw") := NULL]
 
 setnames(raccoon, 
@@ -18,11 +18,11 @@ setnames(raccoon,
            "Time difference", "Date Difference", 
            "Latitude", "Longitude", "Temp",
            "Location Type", "Year", 
-           "Animal ID", "Collar ID"), 
+           "Animal ID", "Collar ID", "Location ID"), 
          c("date", "time", "tz-time",
            "hr", "timediff", "datediff",
            "lat", "long", "temp", 
-           "location", "yr", "id", "collar_id"))
+           "location", "yr", "id", "collar_id", "loc_id"))
 
 ## convert dates/times to POSIXct
 raccoon$date <- as.POSIXct(raccoon$date, 
@@ -35,16 +35,29 @@ raccoon[, idate := as.IDate(date)]
 raccoon[, itime := as.ITime(time)]
 raccoon[, datetime := as.POSIXct(paste(idate,itime), format = "%Y-%m-%d %H:%M:%S" )]
 
-## quick plot 
+#### remove erroneous fixes ####
 
-pts <- SpatialPointsDataFrame(locs[, ..coords],
-                              proj4string = CRS(utm21N),
-                              data = locs[, .(ID)])
+## remove NAs for lat and long 
+raccoon <- raccoon[!is.na(raccoon$lat),]
+raccoon <- raccoon[!is.na(raccoon$long),]
 
-ud <- kernelUD(pts, grid = 700, extent = 3)
+## change names of locations
+raccoon$location[raccoon$location == "Conservation Area"] <- "CA"
+raccoon$location[raccoon$location == "Swine Farm"] <- "SF"
 
-ggplot(raccoon[location == "Conservation Area" & id == "R1506"],
-       aes(long, lat, color = idate)) +
-  geom_point() +
-  geom_path() +
-  facet_wrap(~yr*id)
+## add unique identifier for each ID
+raccoon$id_loc_yr_ses <- as.factor(paste(raccoon$id,
+                                      raccoon$location,
+                                      raccoon$yr, 
+                                      raccoon$Session, 
+                                   sep = "_"))
+
+## assign unique var to loc, yr, session
+raccoon$loc_yr_ses <- as.factor(paste(raccoon$location,
+                                         raccoon$yr, 
+                                         raccoon$Session, 
+                                         sep = "_"))
+
+fwrite(raccoon, "output/raccoon.csv")
+
+
