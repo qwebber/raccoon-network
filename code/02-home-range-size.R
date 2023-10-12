@@ -1,7 +1,7 @@
 
 ### Packages ----
 libs <- c('data.table', 'ggplot2', 'sf',
-          'spatsoc', 'dplyr', 'amt')
+          'spatsoc', 'dplyr')
 lapply(libs, require, character.only = TRUE)
 
 
