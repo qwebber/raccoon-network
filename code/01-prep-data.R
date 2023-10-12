@@ -45,14 +45,22 @@ raccoon <- raccoon[!is.na(raccoon$long),]
 raccoon$location[raccoon$location == "Conservation Area"] <- "CA"
 raccoon$location[raccoon$location == "Swine Farm"] <- "SF"
 
+## julian date
+raccoon[, jday := yday(idate)]
+
+# assign season
+raccoon[jday >= 144 & jday <= 228, season := 'spring/summer']
+raccoon[jday >= 229 & jday <= 309, season := 'fall']
+raccoon <- raccoon[!is.na(season)]
+
 ## add unique identifier for each ID
 raccoon$id_loc_yr_ses <- as.factor(paste(raccoon$id,
                                       raccoon$location,
                                       raccoon$yr, 
-                                      raccoon$Session, 
+                                      raccoon$season, 
                                    sep = "_"))
 
-## assign unique var to loc, yr, session
+## assign unique var to loc, yr, season
 raccoon$loc_yr_ses <- as.factor(paste(raccoon$location,
                                          raccoon$yr, 
                                          raccoon$Session, 
