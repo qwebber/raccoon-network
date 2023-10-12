@@ -8,6 +8,16 @@ lapply(libs, require, character.only = TRUE)
 #### load data
 raccoon <- fread("output/raccoon.csv")
 
+raccoon[, jday := yday(idate)]
+
+# assign season
+raccoon[jday >= 144 & jday <= 228, season := 'spring/summer']
+raccoon[jday >= 229 & jday <= 309, season := 'fall']
+
+## look at seasons
+aa <- raccoon[, min(jday), by = c("id", "yr")]
+aa$max <- raccoon[, max(jday), by = c("id", "yr")]$V1
+
 
 ############################################################
 ###### Calculate Home range area for each individual #######
@@ -52,7 +62,9 @@ utm <- 'EPSG:32617'
 areaDT <- build_polys(raccoon, 
                       projection = utm, 
                       hrType = 'kernel', 
-                      hrParams = list(percent = 95, grid = 400),
+                      hrParams = list(percent = 95, 
+                                      extent = 7,
+                                      grid = 400),
                       id = 'id', 
                       coords = c('X', 'Y'), 
                       splitBy = c('yr', 'location', 'loc_id'))
@@ -66,13 +78,43 @@ areaDT[, c("id", "yr", "location", "loc_id") := tstrsplit(id, "-", fixed=TRUE)][
 ## export data
 write.csv(areaDT, "output/area.csv")
 
+ggplot(areaDT, aes(season, area/10000)) +
+  geom_boxplot() + 
+  geom_jitter(aes(color = location)) +
+  facet_wrap(~location)
+
+hist(log(areaDT$area/10000))
+
+areaDT[, .N, by = "id"]
+
+model1 <- lmer(log(area/10000) ~ 
+                 season * location + 
+                 yr + (1|id), data = areaDT)
+
+jtools::summ(model1)
+
+library(emmeans)
+## emmeans provides the predicted value of strength for all combinations of tod, cover, and season
+emdat <- data.frame(emmeans(model1, ~ 
+                              loc_id + 
+                              yr))
+
+setnames(emdat, "loc_id", "yr")
+
+## leave out season from the Tukey's test comparison
+em <- emmeans(model1, ~ location * season)
+
+## pairwise comparison corrected using Tukey's test
+pairs <- pairs(em, adjust = "tukey")
 
 ## generate home range overlap list
 overlapHR <- group_polys(
                       raccoon,
                       area = TRUE,
                       hrType = 'kernel',
-                      hrParams = list(percent = 95, grid = 400),
+                      hrParams = list(percent = 95, 
+                                      #extent = 7,
+                                      grid = 400),
                       projection = utm,
                       id = c('id','yr', 'location', 'loc_id'),
                       coords = c('X', 'Y'))
