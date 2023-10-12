@@ -8,17 +8,6 @@ lapply(libs, require, character.only = TRUE)
 #### load data
 raccoon <- fread("output/raccoon.csv")
 
-raccoon[, jday := yday(idate)]
-
-# assign season
-raccoon[jday >= 144 & jday <= 228, season := 'spring/summer']
-raccoon[jday >= 229 & jday <= 309, season := 'fall']
-
-## look at seasons
-aa <- raccoon[, min(jday), by = c("id", "yr")]
-aa$max <- raccoon[, max(jday), by = c("id", "yr")]$V1
-
-
 ############################################################
 ###### Calculate Home range area for each individual #######
 ###########################################################
@@ -67,13 +56,13 @@ areaDT <- build_polys(raccoon,
                                       grid = 400),
                       id = 'id', 
                       coords = c('X', 'Y'), 
-                      splitBy = c('yr', 'location', 'loc_id'))
+                      splitBy = c('yr', 'location', 'loc_id', 'season'))
 
 ## convert to data.table
 areaDT <- as.data.table(areaDT)
 
 ## extract id, yr, loc, and loc_id from "id" factor
-areaDT[, c("id", "yr", "location", "loc_id") := tstrsplit(id, "-", fixed=TRUE)][]
+areaDT[, c("id", "yr", "location", "loc_id", "season") := tstrsplit(id, "-", fixed=TRUE)][]
 
 ## export data
 write.csv(areaDT, "output/area.csv")
@@ -83,6 +72,7 @@ ggplot(areaDT, aes(season, area/10000)) +
   geom_jitter(aes(color = location)) +
   facet_wrap(~location)
 
+## quick stats
 hist(log(areaDT$area/10000))
 
 areaDT[, .N, by = "id"]
@@ -113,11 +103,10 @@ overlapHR <- group_polys(
                       area = TRUE,
                       hrType = 'kernel',
                       hrParams = list(percent = 95, 
-                                      #extent = 7,
-                                      grid = 400),
+                                      extent = 7,
+                                      grid = 700),
                       projection = utm,
-                      id = 'id',
-                      splitBy = c('yr', 'location', 'loc_id'),
+                      id = 'id_loc_yr_ses',
                       coords = c('X', 'Y'))
 
 ## convert area from ha to km2 (/10000) and proportion to %
@@ -125,7 +114,7 @@ overlapHR$area <- overlapHR$area/10000
 overlapHR$proportion <- overlapHR$proportion/100
 
 
-overlapHR <- overlapHR[, c("id1", "yr", "location", "loc_id") := tstrsplit(ID1, "-", fixed=TRUE)][]
+overlapHR <- overlapHR[, c("id1", "location", "yr", "season") := tstrsplit(ID1, "-", fixed=TRUE)][]
 overlapHR[, c("id2", "x", "y", "z") := tstrsplit(ID2, "-", fixed=TRUE)][][, c("x", "y", "z") := NULL] ## set up dummy variables (x, y, and z) and then delete them immediately
 
 ## delete rows where individual is overlapping with themselves 
