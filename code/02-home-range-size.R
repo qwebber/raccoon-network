@@ -116,7 +116,8 @@ overlapHR <- group_polys(
                                       #extent = 7,
                                       grid = 400),
                       projection = utm,
-                      id = c('id','yr', 'location', 'loc_id'),
+                      id = 'id',
+                      splitBy = c('yr', 'location', 'loc_id'),
                       coords = c('X', 'Y'))
 
 ## convert area from ha to km2 (/10000) and proportion to %
